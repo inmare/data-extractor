@@ -1,4 +1,5 @@
-from . import dl_data, excel_data, json_data
+from . import excel_data, json_data
+from .download_data import download_data
 from .project_config import DlDataType
 
 
@@ -12,19 +13,15 @@ def generate(excel_file_name: str):
         is_music_dl_success = json_data.check_dl_status(info, DlDataType.MUSIC)
         is_thumbnail_dl_success = json_data.check_dl_status(info, DlDataType.THUMBNAIL)
         if not is_music_dl_success:
-            music_dl_status = dl_data.download_data(
-                info, DlDataType.MUSIC, retry_dl=True
-            )
+            music_dl_status = download_data(info, DlDataType.MUSIC, retry_dl=True)
         if not is_thumbnail_dl_success:
-            thumbnail_dl_staus = dl_data.download_data(
+            thumbnail_dl_staus = download_data(
                 info, DlDataType.THUMBNAIL, retry_dl=True
             )
     else:
         info = excel_data.get_info(recommend_sheet)
-        info, is_music_dl_success = dl_data.download_data(info, DlDataType.MUSIC)
-        info, is_thumbnail_dl_success = dl_data.download_data(
-            info, DlDataType.THUMBNAIL
-        )
+        info, is_music_dl_success = download_data(info, DlDataType.MUSIC)
+        info, is_thumbnail_dl_success = download_data(info, DlDataType.THUMBNAIL)
 
     if is_music_dl_success and is_thumbnail_dl_success:
         # json 파일에 데이터 쓰고 압축하기
