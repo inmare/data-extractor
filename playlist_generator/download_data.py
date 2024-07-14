@@ -1,8 +1,23 @@
 from . import project_config as config
 from .project_config import DlDataType
-from .log_print import log_print
+from .log_print import log_print, LogType
+from PIL import Image
 import yt_dlp
 import os
+
+
+def convert_thumbnail(file_name):
+    log_print(LogType.PROGRESS, "썸네일을 변환 중 입니다...")
+    # 웹브라우저에서 지원되는 이미지 확장자들
+    supported_formats = ["jpg", "jpeg", "png", "gif", "webp"]
+    thumbnail_folder = config.FOLDER_NAME["thumbnail"]
+    for ext in supported_formats:
+        thumbnail_path = os.path.join(thumbnail_folder, f"{file_name}.{ext}")
+        if os.path.exists(thumbnail_path) and ext != "png":
+            img = Image.open(thumbnail_path).convert("RGB")
+            img.save(os.path.join(thumbnail_folder, f"{file_name}.png"), "PNG")
+            os.remove(thumbnail_path)
+            break
 
 
 def download_data(
@@ -24,14 +39,14 @@ def download_data(
         folder_name = config.FOLDER_NAME["music"]
         ydl_opts = config.MUSIC_YDL_OPTS.copy()
         type_name = "노래"
-        key_name = config.ADDITIONAL_KEY["노래 다운 여부"]
+        dl_status_key = config.ADDITIONAL_KEY["노래 다운 여부"]
     elif data_type == DlDataType.THUMBNAIL:
         folder_name = config.FOLDER_NAME["thumbnail"]
         ydl_opts = config.THUMBNAIL_YDL_OPTS.copy()
         type_name = "썸네일"
-        key_name = config.ADDITIONAL_KEY["썸네일 다운 여부"]
+        dl_status_key = config.ADDITIONAL_KEY["썸네일 다운 여부"]
 
-    log_print("작업", f"{type_name} 다운로드를 시작합니다.")
+    log_print(LogType.PROGRESS, f"{type_name} 다운로드를 시작합니다.")
 
     # dict가 파이썬 최근 버전에서는 index를 기억함에 따라 아래와 같은 작업 가능
     dl_status = [True] * len(playlist_info)
@@ -46,30 +61,36 @@ def download_data(
                 os.remove(os.path.join(folder_name, file))
 
     for idx, info in enumerate(playlist_info):
-        # 다시 다운로드 하는 거면 이미 다운로드 된 건 넘어감
-        if retry_dl:
-            if info[key_name]:
-                continue
-            else:
-                log_print(
-                    "작업", f'{type_name} "{song_name_kor}" 다운로드를 다시 시작합니다.'
-                )
         song_name_kor = info[config.EXCEL_KEY["한국어 노래 제목"]]
         file_name = info[config.ADDITIONAL_KEY["파일 이름"]]
         link = info[config.EXCEL_KEY["다운로드 가능 링크"]]
+
+        # 다시 다운로드 하는 거면 이미 다운로드 된 건 넘어감
+        if retry_dl:
+            if info[dl_status_key]:
+                continue
+            else:
+                log_print(
+                    LogType.PROGRESS,
+                    f'{type_name} "{song_name_kor}" 다운로드를 다시 시작합니다.',
+                )
+
         try:
             ydl_opts["outtmpl"] = os.path.join(folder_name, file_name + ".%(ext)s")
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download(link)
+            if data_type == DlDataType.THUMBNAIL:
+                convert_thumbnail(file_name)
             log_print(
-                "성공", f'{type_name} "{song_name_kor}"의 다운로드에 성공했습니다.'
+                LogType.SUCCESS,
+                f'{type_name} "{song_name_kor}"의 다운로드에 성공했습니다.',
             )
-        except Exception:
+        except Exception as _:
             dl_status[idx] = False
             log_print(
-                "오류",
-                f'{type_name} "{song_name_kor}"의 다운로드에 실패했습니다. {type_name}를 스킵합니다.',
+                LogType.ERROR,
+                f'{type_name} "{song_name_kor}"의 다운로드에 실패했습니다. 파일을 스킵합니다.',
             )
 
     return dl_status
