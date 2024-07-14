@@ -43,6 +43,23 @@ def get_dl_status(info, data_type, is_json_exist):
         return dl_status
 
 
+def extract_final_info(info_list):
+    final_info_names = config.FINAL_OUTPUT_KEY
+
+    final_info_list = []
+    for info in info_list:
+        final_info = {}
+        for name in final_info_names:
+            if name not in config.EXCEL_KEY.keys():
+                key_name = config.ADDITIONAL_KEY[name]
+            else:
+                key_name = config.EXCEL_KEY[name]
+            final_info[key_name] = info[key_name]
+        final_info_list.append(final_info)
+
+    return final_info_list
+
+
 def generate(excel_file_name: str):
     date_sheet, recommend_sheet = excel_data.get_sheets(excel_file_name)
     date = excel_data.get_date(date_sheet)
@@ -59,7 +76,8 @@ def generate(excel_file_name: str):
 
     if dl_success:
         # json 파일에 데이터 쓰고 압축하기
-        json_data.write_json_data(date, info)
+        final_info_list = extract_final_info(info)
+        json_data.write_json_data(date, final_info_list)
         log_print(LogType.SUCCESS, "모든 데이터를 다운로드 받았습니다.")
         zipf = zipfile.ZipFile(
             f"{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip",
