@@ -1,4 +1,5 @@
 from . import project_config as config
+from .project_config import DlDataType
 import json
 import os
 
@@ -7,7 +8,7 @@ def get_json_file_name(date):
     return f"{date.year}-{date.month}-{config.JSON_FILE_SUFFIX}.json"
 
 
-def write_json_data(date, info, file_name):
+def write_json_data(date, info):
     json_file_name = get_json_file_name(date)
     with open(json_file_name, "w", encoding="utf-8") as f:
         json.dump(info, f, ensure_ascii=False, indent=4)
@@ -26,18 +27,18 @@ def check_json_file_exist(date):
     return file_exists
 
 
-def check_download_status(info, data_type):
-    for song_info in info:
-        if (
-            data_type == "music"
-            and not song_info[config.ADDITIONAL_KEY["노래 다운 여부"]]
-        ):
-            return False
-        if (
-            data_type == "thumbnail"
-            and not song_info[config.ADDITIONAL_KEY["썸네일 다운 여부"]]
-        ):
-            return False
+def check_dl_status(info, data_type):
+    if data_type == DlDataType.MUSIC:
+        key_name = config.ADDITIONAL_KEY["노래 다운 여부"]
+    elif data_type == DlDataType.THUMBNAIL:
+        key_name = config.ADDITIONAL_KEY["썸네일 다운 여부"]
+
+    # 모든 dict의 key를 모아서 set으로 만들기
+    all_keys = set().union(*(d.keys() for d in info))
+
+    if key_name not in all_keys:
+        return False
+
     return True
 
 
