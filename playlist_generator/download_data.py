@@ -17,7 +17,7 @@ def download_data(
         retry_dl: 재다운로드 여부
 
     Returns:
-        [info_list, download_success] info_list: 다운로드 정보가 담긴 리스트, download_success: 다운로드 성공 여부
+        dl_status: 각 데이터의 다운로드 성공 여부를 담은 리스트
     """
 
     if data_type == DlDataType.MUSIC:
@@ -34,7 +34,7 @@ def download_data(
     log_print("작업", f"{type_name} 다운로드를 시작합니다.")
 
     # dict가 파이썬 최근 버전에서는 index를 기억함에 따라 아래와 같은 작업 가능
-    download_status = [True] * len(playlist_info)
+    dl_status = [True] * len(playlist_info)
 
     # 다운로드를 처음 하는 거면 폴더를 비워줌
     if not retry_dl:
@@ -66,13 +66,13 @@ def download_data(
                 "성공", f'{type_name} "{song_name_kor}"의 다운로드에 성공했습니다.'
             )
         except Exception:
-            download_status[idx] = False
+            dl_status[idx] = False
             log_print(
                 "오류",
                 f'{type_name} "{song_name_kor}"의 다운로드에 실패했습니다. {type_name}를 스킵합니다.',
             )
 
-    return download_status
+    return dl_status
 
 
 if __name__ == "__main__":
