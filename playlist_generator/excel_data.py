@@ -1,7 +1,7 @@
+from .log_print import log_print, LogType
 from . import project_config as config
 import openpyxl as xl
 import datetime
-from .log_print import log_print
 
 
 def get_sheets(excel_file_name: str):
@@ -25,13 +25,15 @@ def get_date(sheet):
         year = int(sheet[year_cell].value)
         month = int(sheet[month_cell].value)
         date = datetime.date(year, month, 1)
-        log_print("성공", f"{date.year}년 {date.month}월 플레이리스트를 생성합니다.")
+        log_print(
+            LogType.SUCCESS, f"{date.year}년 {date.month}월 플레이리스트를 생성합니다."
+        )
         return date
     except Exception as e:
-        log_print("오류", f"데이터를 가져오는데 실패했습니다.")
-        log_print("오류", e)
+        log_print(LogType.ERROR, f"데이터를 가져오는데 실패했습니다.")
+        log_print(LogType.ERROR, e)
         log_print(
-            "오류",
+            LogType.ERROR,
             f"추천하는 법 시트의 {year_cell}과 {month_cell}에 년도와 월이 제대로 기입되어 있는지 확인해주세요.",
         )
         exit(0)
@@ -46,7 +48,7 @@ def create_file_name(song_name_kor):
 
 
 def get_info(sheet):
-    log_print("작업", f"엑셀 파일에서 데이터를 가져오는 중입니다...")
+    log_print(LogType.PROGRESS, f"엑셀 파일에서 데이터를 가져오는 중입니다...")
 
     info_array = []
     anon_idx = ord("A")
@@ -64,7 +66,6 @@ def get_info(sheet):
                 key_name = key[1]
                 if property == "이름":
                     person_name = cell.value
-                    log_print("작업", f"{person_name}님의 데이터를 처리중입니다...")
 
                 # 필요한 데이터 부분에 이름이 없을 경우 에러 발행
                 if property in config.ESSENTIAL_KEY and cell.value is None:
@@ -82,14 +83,14 @@ def get_info(sheet):
                 else:
                     info[key_name] = cell.value
             info_array.append(info)
-            log_print("성공", f"{person_name}님의 데이터를 저장했습니다.")
+            log_print(LogType.SUCCESS, f"{person_name}님의 데이터를 저장했습니다.")
             row_idx += 1
         return info_array
     except Exception as e:
         person_name, property = e.args
         log_print(
-            "에러",
-            f"{person_name}의 {property}에 해당하는 정보가 없는 것 같습니다. 엑셀 파일을 확인해주세요.",
+            LogType.ERROR,
+            f"{person_name}님의 {property}에 해당하는 정보가 없는 것 같습니다. 엑셀 파일을 확인해주세요.",
         )
         exit(0)
 
