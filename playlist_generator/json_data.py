@@ -5,7 +5,7 @@ import os
 
 
 def get_json_file_name(date):
-    return f"{date.year}-{date.month}-{config.JSON_FILE_SUFFIX}.json"
+    return f"{date.year}-{str(date.month).zfill(2)}-{config.JSON_FILE_SUFFIX}.json"
 
 
 def write_json_data(date, info):
@@ -37,9 +37,9 @@ def check_dl_status(info, data_type):
     all_keys = set().union(*(d.keys() for d in info))
 
     if key_name not in all_keys:
-        return False
+        return True
 
-    return True
+    return False
 
 
 if __name__ == "__main__":
