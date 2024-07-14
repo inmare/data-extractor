@@ -2,6 +2,7 @@ from .log_print import log_print, LogType
 from . import project_config as config
 import openpyxl as xl
 import datetime
+import sys
 
 
 def get_sheets(excel_file_name: str):
@@ -21,7 +22,7 @@ def get_sheets(excel_file_name: str):
             LogType.ERROR,
             f"엑셀 파일을 열지 못했습니다. 파일이 업로드 되었는지, 이름은 제대로 입력했는지 확인해주세요.",
         )
-        exit(0)
+        sys.exit(0)
 
 
 def get_date(sheet):
@@ -43,7 +44,7 @@ def get_date(sheet):
             LogType.ERROR,
             f"추천하는 법 시트의 {year_cell}과 {month_cell}에 년도와 월이 제대로 기입되어 있는지 확인해주세요.",
         )
-        exit(0)
+        sys.exit(0)
 
 
 def create_file_name(song_name_kor):
@@ -99,7 +100,7 @@ def get_info(sheet):
             LogType.ERROR,
             f"{person_name}님의 {property}에 해당하는 정보가 없는 것 같습니다. 엑셀 파일을 확인해주세요.",
         )
-        exit(0)
+        sys.exit(0)
 
 
 if __name__ == "__main__":
