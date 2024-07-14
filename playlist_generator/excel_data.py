@@ -9,12 +9,19 @@ def get_sheets(excel_file_name: str):
         excel_path = f"{excel_file_name}.xlsx"
     else:
         excel_path = excel_path
-    workbook = xl.load_workbook(excel_path)
-    sheets = workbook.worksheets
-    date_sheet = sheets[0]
-    recommend_sheet = sheets[1]
+    try:
+        workbook = xl.load_workbook(excel_path)
+        sheets = workbook.worksheets
+        date_sheet = sheets[0]
+        recommend_sheet = sheets[1]
 
-    return [date_sheet, recommend_sheet]
+        return [date_sheet, recommend_sheet]
+    except Exception as e:
+        log_print(
+            LogType.ERROR,
+            f"엑셀 파일을 열지 못했습니다. 파일이 업로드 되었는지, 이름은 제대로 입력했는지 확인해주세요.",
+        )
+        exit(0)
 
 
 def get_date(sheet):
