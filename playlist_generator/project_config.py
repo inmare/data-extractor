@@ -96,7 +96,8 @@ THUMBNAIL_YDL_OPTS = {
     "logger": loggerOutputs,
 }
 
-JSON_FILE_SUFFIX = "플레이리스트"
+JSON_FILE_SUFFIX = "플레이리스트 정보"
+ZIP_FILE_SUFFIX = "플레이리스트 자료"
 
 
 if __name__ == "__main__":
