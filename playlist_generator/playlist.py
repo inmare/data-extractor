@@ -54,7 +54,15 @@ def extract_final_info(info_list):
                 key_name = config.ADDITIONAL_KEY[name]
             else:
                 key_name = config.EXCEL_KEY[name]
-            final_info[key_name] = info[key_name]
+
+            if key_name == config.EXCEL_KEY["원본 링크"]:
+                # 원본 링크가 비어있는 경우면 그냥 None으로 처리
+                is_valid_link = info[key_name].startswith("http")
+                if not is_valid_link:
+                    final_info[key_name] = None
+            else:
+                final_info[key_name] = info[key_name]
+
         final_info_list.append(final_info)
 
     return final_info_list
