@@ -63,6 +63,7 @@ FINAL_OUTPUT_KEY = [
     "작곡가",
     "코멘트",
     "한국어 가사 링크",
+    "원본 링크",
 ]
 
 FOLDER_NAME = {
@@ -90,8 +91,8 @@ MUSIC_YDL_OPTS = {
 }
 
 THUMBNAIL_YDL_OPTS = {
-    "skip_download": True,  # Skip downloading the video
-    "writethumbnail": True,  # Download the thumbnail
+    "skip_download": True,  # 비디오 다운로드 스킵
+    "writethumbnail": True,  # 썸네일 다운로드
     "quiet": True,
     "logger": loggerOutputs,
 }
