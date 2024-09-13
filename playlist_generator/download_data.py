@@ -26,13 +26,10 @@ def download_data(
     """
     데이터를 기반으로 파일을 다운로드 하는 함수
 
-    Args:
-        playlist_info: 노래 정보가 담긴 리스트
-        data_type: 다운로드할 데이터 종류
-        retry_dl: 재다운로드 여부
-
-    Returns:
-        dl_status: 각 데이터의 다운로드 성공 여부를 담은 리스트
+    :param playlist_info: 노래 정보가 담긴 리스트
+    :param data_type: 다운로드할 데이터 종류
+    :param retry_dl: 재다운로드 여부
+    :return dl_status: 각 데이터의 다운로드 성공 여부를 담은 리스트
     """
 
     if data_type == DlDataType.MUSIC:
