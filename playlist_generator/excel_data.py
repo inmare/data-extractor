@@ -9,7 +9,7 @@ def get_sheets(excel_file_name: str):
     if excel_file_name[-5:] != ".xlsx":
         excel_path = f"{excel_file_name}.xlsx"
     else:
-        excel_path = excel_path
+        excel_path = excel_file_name
     try:
         workbook = xl.load_workbook(excel_path)
         sheets = workbook.worksheets
