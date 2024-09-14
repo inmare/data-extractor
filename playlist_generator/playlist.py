@@ -4,6 +4,20 @@ from .project_config import DlDataType
 from . import project_config as config
 from .log_print import log_print, LogType
 import zipfile
+import shutil
+import os
+
+
+def delete_original_path(date):
+    music_folder = config.FOLDER_NAME["music"]
+    thumbnail_folder = config.FOLDER_NAME["thumbnail"]
+    json_file = json_data.get_json_file_name(date)
+    if os.path.exists(music_folder):
+        shutil.rmtree(music_folder)
+    if os.path.exists(thumbnail_folder):
+        shutil.rmtree(thumbnail_folder)
+    if os.path.exists(json_file):
+        os.remove(json_file)
 
 
 def zip_files(info_list, data_type, zipf):
@@ -99,6 +113,7 @@ def generate(excel_file_name: str):
             LogType.SUCCESS,
             f"{date.year}년 {date.month}월 플레이리스트 압축파일을 생성했습니다.",
         )
+        delete_original_path(date)
         log_print(
             LogType.SUCCESS,
             f"생성된 압축파일 이름은 {date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip 입니다.",
