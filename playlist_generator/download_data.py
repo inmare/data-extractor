@@ -63,17 +63,19 @@ def download_data(
         link = info[config.EXCEL_KEY["다운로드 가능 링크"]]
 
         # 다시 다운로드 하는 거면 이미 다운로드 된 건 넘어감
-        if retry_dl:
-            if info[dl_status_key]:
-                continue
-            else:
+        try:
+            ydl_opts["outtmpl"] = os.path.join(folder_name, file_name + ".%(ext)s")
+            if retry_dl:
                 log_print(
                     LogType.PROGRESS,
                     f'{type_name} "{song_name_kor}" 다운로드를 다시 시작합니다.',
                 )
-
-        try:
-            ydl_opts["outtmpl"] = os.path.join(folder_name, file_name + ".%(ext)s")
+            else:
+                log_print(
+                    LogType.PROGRESS,
+                    f'{type_name} "{song_name_kor}" 다운로드를 시작합니다.',
+                )
+            log_print(LogType.PROGRESS, f"링크 - {link}")
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.download(link)
@@ -83,12 +85,14 @@ def download_data(
                 LogType.SUCCESS,
                 f'{type_name} "{song_name_kor}"의 다운로드에 성공했습니다.',
             )
-        except Exception as _:
+        except Exception as e:
             dl_status[idx] = False
             log_print(
                 LogType.ERROR,
                 f'{type_name} "{song_name_kor}"의 다운로드에 실패했습니다. 파일을 스킵합니다.',
             )
+            log_print(LogType.ERROR, "아래는 구체적인 에러메세지입니다.")
+            print(e)
 
     return dl_status
 
