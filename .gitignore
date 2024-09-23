@@ -6,3 +6,4 @@ main.spec
 __pycache__
 *.xlsx
 *.zip
+ffmpeg/ffmpeg.exe
