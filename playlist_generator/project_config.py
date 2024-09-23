@@ -39,7 +39,6 @@ EXCEL_KEY = {
 
 # 무조건 엑셀 파일에 들어있어야 하는 값들
 ESSENTIAL_KEY = [
-    "원본 링크",
     "다운로드 가능 링크",
     "노래 제목",
     "한국어 노래 제목",
@@ -78,6 +77,7 @@ class DlDataType(Enum):
 
 
 MUSIC_YDL_OPTS = {
+    "ffmpeg_location": "ffmpeg/ffmpeg.exe",
     "format": "bestaudio/best",
     "postprocessors": [
         {
@@ -91,6 +91,7 @@ MUSIC_YDL_OPTS = {
 }
 
 THUMBNAIL_YDL_OPTS = {
+    "ffmpeg_location": "ffmpeg/ffmpeg.exe",
     "skip_download": True,  # 비디오 다운로드 스킵
     "writethumbnail": True,  # 썸네일 다운로드
     "quiet": True,
