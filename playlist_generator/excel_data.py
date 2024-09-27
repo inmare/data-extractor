@@ -87,27 +87,27 @@ def get_info(sheet):
                     anon_idx += 1
                 # 파일명에 사용할 수 없는 문자 변경
                 elif prop == "한국어 노래 제목":
-                    file_name = create_file_name(cell.value.strip())
-                    info[key_name] = cell.value.strip()
+                    file_name = create_file_name(cell.value)
+                    info[key_name] = cell.value
                     info[file_name_key] = file_name
                 # 원본 링크가 링크의 형식이 아닐 경우 value를 None으로 처리
                 elif prop == "원본 링크":
                     if cell.value is None:
                         info[key_name] = None
                         continue
-                    is_valid_link = cell.value.strip().startswith("http")
+                    is_valid_link = cell.value.startswith("http")
                     info[key_name] = cell.value if is_valid_link else None
                 # 다운로드 가능 링크가 youtube의 링크 형식이 아닐 경우 경고문 출력
                 elif prop == "다운로드 가능 링크":
                     yt_link_regex = re.compile(
                         r"^http?s:\/\/(www\.youtube\.com\/watch\?v=|youtu\.be\/)[A-Za-z0-9-_]{11}.*$"
                     )
-                    is_valid_link = yt_link_regex.match(cell.value.strip())
+                    is_valid_link = yt_link_regex.match(cell.value)
                     if not is_valid_link:
                         is_warned = True
-                    info[key_name] = cell.value.strip()
+                    info[key_name] = cell.value
                 else:
-                    info[key_name] = cell.value.strip()
+                    info[key_name] = cell.value
             info_array.append(info)
             if is_warned:
                 warned_info.append(info)
