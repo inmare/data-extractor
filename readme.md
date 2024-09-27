@@ -4,4 +4,4 @@
 
 # 코드 작성시 주의사항
 
-현재 ffmpeg가 크기 제한으로 github에는 업로드 되어있지 않기 때문에 코드를 실행하려면 디렉토리에 ffmpeg 폴더를 만들고 해당 폴더에 ffmpeg.exe파일을 넣어야 됩니다.
+현재 ffmpeg가 크기 제한으로 github에는 업로드 되어있지 않기 때문에 코드를 실행하려면 디렉토리에 `assets` 폴더를 만들고 해당 폴더에 `ffmpeg.exe, ffprobe.exe`파일을 넣어야 됩니다.
