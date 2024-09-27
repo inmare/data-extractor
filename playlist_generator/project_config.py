@@ -1,5 +1,6 @@
 from .log_print import log_print
 from enum import Enum, auto
+import os
 
 
 # youtube-dl logger용 클래스
@@ -76,8 +77,11 @@ class DlDataType(Enum):
     THUMBNAIL = auto()
 
 
+FFMPEG_PATH = "\\assets\\ffmpeg.exe"
+
+
 MUSIC_YDL_OPTS = {
-    "ffmpeg_location": "ffmpeg/ffmpeg.exe",
+    "ffmpeg_location": FFMPEG_PATH,
     "format": "bestaudio/best",
     "postprocessors": [
         {
@@ -91,7 +95,7 @@ MUSIC_YDL_OPTS = {
 }
 
 THUMBNAIL_YDL_OPTS = {
-    "ffmpeg_location": "ffmpeg/ffmpeg.exe",
+    "ffmpeg_location": FFMPEG_PATH,
     "skip_download": True,  # 비디오 다운로드 스킵
     "writethumbnail": True,  # 썸네일 다운로드
     "quiet": True,

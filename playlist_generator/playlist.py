@@ -85,7 +85,7 @@ def extract_final_info(info_list):
     return final_info_list
 
 
-def generate(excel_file_name: str):
+def generate(program_dir: str, excel_file_name: str):
     try:
         date_sheet, recommend_sheet = excel_data.get_sheets(excel_file_name)
         log_print(LogType.PROGRESS, f"파일 {excel_file_name}에서 데이터를 추출합니다.")
@@ -97,6 +97,7 @@ def generate(excel_file_name: str):
             info = json_data.read_json_data(date)
         else:
             info = excel_data.get_info(recommend_sheet)
+
         music_dl_status = get_dl_status(info, DlDataType.MUSIC, is_json_exist)
         thumbnail_dl_status = get_dl_status(info, DlDataType.THUMBNAIL, is_json_exist)
 
@@ -155,7 +156,7 @@ def generate(excel_file_name: str):
         json_data.write_json_data(date, final_info_list)
 
         zipf = zipfile.ZipFile(
-            f"{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip",
+            f"{program_dir}\\{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip",
             "w",
             zipfile.ZIP_DEFLATED,
         )
@@ -184,9 +185,7 @@ def generate(excel_file_name: str):
             # 다운로드, 생성된 파일들이 있으면 삭제
             delete_original_path(date)
             # 압축파일이 생성되었으면 삭제
-            zip_file_path = (
-                f"{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip"
-            )
+            zip_file_path = f"{program_dir}\\{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip"
             if os.path.exists(zip_file_path):
                 os.remove(zip_file_path)
         input("Enter키를 누르면 프로그램이 종료 됩니다...")
