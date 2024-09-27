@@ -13,5 +13,6 @@ zipf = zipfile.ZipFile(
     zipfile.ZIP_DEFLATED,
 )
 zipf.write("dist/main.exe", "플레이리스트 다운로더.exe")
-zipf.write("ffmpeg/ffmpeg.exe", "ffmpeg/ffmpeg.exe")
+zipf.write("assets/ffmpeg.exe", "assets/ffmpeg.exe")
+zipf.write("assets/ffprobe.exe", "assets/ffprobe.exe")
 zipf.close()
