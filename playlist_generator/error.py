@@ -14,6 +14,17 @@
 #         return self.msg
 
 
+class UserInvokedException(Exception):
+    """
+    유저가 스스로 프로그램을 종료했을 때 발생하는 에러메세지
+    """
+    def __init__(self) -> None:
+        self.msg = "사용자가 프로그램을 종료했습니다."
+
+    def __str__(self) -> str:
+        return self.msg
+
+
 class CustomException(Exception):
     """
     사용자가 정의한 에러클래스
