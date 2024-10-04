@@ -1,30 +1,4 @@
-from .log_print import log_print
 from enum import Enum, auto
-import os
-
-
-# youtube-dl logger용 클래스
-class loggerOutputs:
-    def error(msg: str):
-        error_msg = msg.removeprefix("ERROR: ")
-        log_print("오류", error_msg)
-
-    def warning(msg):
-        pass
-        # log_print("경고", msg)
-
-    def debug(msg):
-        pass
-        # log_print("작업", msg)
-
-
-# 그 외 설정들
-DATE_CELL = {
-    "year": "I4",
-    "month": "J4",
-}
-
-START_ROW = 3
 
 EXCEL_KEY = {
     "이름": "name",
@@ -79,7 +53,6 @@ class DlDataType(Enum):
 
 FFMPEG_PATH = "\\assets\\ffmpeg.exe"
 
-
 MUSIC_YDL_OPTS = {
     "ffmpeg_location": FFMPEG_PATH,
     "format": "bestaudio/best",
@@ -104,7 +77,6 @@ THUMBNAIL_YDL_OPTS = {
 
 JSON_FILE_SUFFIX = "플레이리스트 정보"
 ZIP_FILE_SUFFIX = "플레이리스트 자료"
-
 
 if __name__ == "__main__":
     pass

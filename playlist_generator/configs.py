@@ -2,6 +2,15 @@ from enum import Enum
 from .error import CustomException
 
 
+class ExcelSheetCfg(Enum):
+    DateSheetIdx = 0
+    YearCell = "I4"
+    MonthCell = "J4"
+    RecommendSheetIdx = 1
+    KeyDataRow = 1
+    StartDataRow = 3
+
+
 class DataEnum(Enum):
     """
     Playlist 데이터를 다루는 기본 enum 클래스\\
@@ -13,20 +22,19 @@ class DataEnum(Enum):
         if "export" not in value:
             raise CustomException("Data 클래스에 필요한 export 키가 없습니다.")
 
-    def __str__(self):
+    @property
+    def keyname(self) -> str:
         return self.name[0].lower() + self.name[1:]
 
-    def __repr__(self):
-        return self.name[0].lower() + self.name[1:]
-
-    def should_export(self):
+    @property
+    def export(self) -> bool:
         """
         데이터를 json 파일로 내보낼지 결정하는 메서드
         """
         return self.value["export"]
 
 
-def get_data_by_key_name(data: DataEnum, key_name: str) -> DataEnum:
+def get_data_by_key_name(data: DataEnum, key_name: str) -> DataEnum | None:
     """
     DataEnum에서 key_name에 해당하는 데이터를 반환한다.
 
@@ -37,44 +45,14 @@ def get_data_by_key_name(data: DataEnum, key_name: str) -> DataEnum:
     Returns:
         DataEnum: key_name에 해당하는 데이터가 존재하면 해당 데이터를 반환하고, 없다면 None을 반환한다.
     """
-    # next는 iterator에 대해서 다음 요소를 반환하는 함수이다.
-    return next((item for item in data if item == key_name), None)
+
+    for item in data:
+        if item.keyname == key_name:
+            return item
+    return None
 
 
-class ExcelSheet(Enum):
-    """
-    엑셀 시트 관련 설정들이 들어있는 Enum 클래스
-    """
-
-    DateSheetIdx = 0
-    """
-    날짜 데이터가 있는 시트의 인덱스
-    """
-    YearCell = "I4"
-    """
-    시트에서 연도가 들어있는 셀
-    """
-    MonthCell = "J4"
-    """
-    시트에서 월이 들어있는 셀
-    """
-    RecommendSheetIdx = 1
-    """
-    곡 추천 리스트 시트의 인덱스
-    """
-    KeyDataRow = 2
-    """
-    데이터의 key 값이 들어있는 행
-    """
-
-    def __str__(self):
-        return self.name
-
-    def __repr__(self):
-        return self.value
-
-
-class ExcelData(DataEnum):
+class ExcelDataCfg(DataEnum):
     """
     엑셀에 들어있는 데이터와 관련한 Enum 클래스\\
     "export", "essential", "name" 키가 반드시 존재해야 한다.
@@ -165,17 +143,79 @@ class ExcelData(DataEnum):
                 "ExcelData 클래스에 필요한 essential 혹은 name 키가 없습니다."
             )
 
-    def is_essential(self):
+    @property
+    def essential(self):
         """
         해당 데이터가 필수적인 데이터인지 반환한다.
         """
         return self.value["essential"]
 
-    def get_ui_name(self):
+    @property
+    def ui_name(self):
         """
         엑셀 시트에서 사용자에게 보여지는 해당 키의 이름을 반환한다.
         """
         return self.value["name"]
+
+
+class AdditionalDataCfg(DataEnum):
+    # 노래의 다운로드 여부
+    MusicDownloaded = {
+        "export": False,
+    }
+    # 썸네일의 다운로드 여부
+    ThumbnailDownloaded = {
+        "export": False,
+    }
+    # 다운로드 할 때의 파일 이름
+    FileName = {
+        "export": True,
+    }
+    # 다운로드 가능 링크가 유튜브 링크인지 확인
+    IsYoutubeLink = {
+        "export": False,
+    }
+
+    def __init__(self, value: dict) -> None:
+        super().__init__(value)
+
+
+class Paths(Enum):
+    """
+    유튜브 다운로드 시 사용되는 파일 경로를 관리하는 Enum 클래스
+    """
+
+    MusicDir = "music"
+    """
+    노래 파일이 저장되는 폴더
+    """
+    ThumbnailDir = "thumbnail"
+    """
+    썸네일 파일이 저장되는 폴더
+    """
+    FFmpegFileDir = "assets/ffmpeg.exe"
+    """
+    ffmpeg.exe 파일의 경로
+    """
+
+
+class DownloadOption(Enum):
+    Music = {
+        "format": "bestaudio/best",
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }
+        ],
+        "quiet": True,
+    }
+    Thumbnail = {
+        "skip_download": True,  # 비디오 다운로드 스킵
+        "writethumbnail": True,  # 썸네일 다운로드
+        "quiet": True,
+    }
 
 
 if __name__ == "__main__":
