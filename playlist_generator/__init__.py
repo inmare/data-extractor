@@ -1,1 +1,1 @@
-from . import playlist
+from .playlist import Playlist
