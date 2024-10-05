@@ -119,6 +119,7 @@ class Playlist:
                 "노래와 썸네일의 다운로드를 시작합니다. 유튜브 영상 다운로드 프로그램의 메세지가 일부 표시될 수 있습니다."
             )
 
+        # TODO: 나중에 반복되는 부분을 함수로 분리하기
         for idx, data in enumerate(self.playlist_data):
             downloadable_link = data[ExcelDataCfg.DownloadableLink.keyname]
             file_name = data[AdditionalDataCfg.FileName.keyname]
