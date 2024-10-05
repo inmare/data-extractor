@@ -207,13 +207,16 @@ class Playlist:
         try:
             json_data = []
             for data in self.playlist_data:
+                data_dict = {}
                 for value in ExcelDataCfg:
                     if value.export:
-                        json_data.append(data[value.keyname])
+                        data_dict[value.keyname] = data[value.keyname]
 
                 for value in AdditionalDataCfg:
                     if value.export:
-                        json_data.append(data[value.keyname])
+                        data_dict[value.keyname] = data[value.keyname]
+
+                json_data.append(data_dict)
 
             FileManagment.save_json_file(
                 self.program_dir, f"{self.file_prefix}.json", json_data
