@@ -8,34 +8,41 @@
 
 import os
 from .error import CustomException, UserInvokedException
-from .excel_data import ExcelData, ExcelFile
-from .configs import ExcelDataCfg, AdditionalDataCfg
-from .additional_data import AdditionalData
+from .excel_file import ExcelFile
+from . import excel_data as ExcelData
+from .configs import ExcelDataCfg, AdditionalDataCfg, DownloadDataCfg, PathCfg
+from . import additional_data as AdditionalData
+from . import download_data as DownloadData
+from . import file_managment as FileManagment
 from .logger import Logger
+from .utils import get_current_time
 
 
 class Playlist:
     def __init__(self, program_path: str, file_path: str) -> None:
         self.program_dir = os.path.dirname(program_path)
-        self.file_path = os.path.join(file_path)
+        self.file_path = file_path
         self.excel_file = ExcelFile(self.file_path)
         self.excel_data = None
-        self.additional_data = []
+        self.additional_data = None
+        self.created_time = get_current_time()
 
     def get_excel_data(self):
         """
-        파일 경로에서 엑셀 데이터를 가져옴
+        파일 경로에서 엑셀 데이터를 가져오는 메서드
         """
         ordered_data = ExcelData.get_data_order(self.excel_file.data_sheet)
         self.excel_data = ExcelData.get_data(self.excel_file.data_sheet, ordered_data)
 
     def init_additional_data(self) -> None:
-        for i in range(len(self.excel_data)):
-            self.additional_data.append({})
+        array = []
+        for _ in range(len(self.excel_data)):
+            array.append({})
+        self.additional_data = array
 
-    def add_data_using_excel_data(self):
+    def process_excel_data(self):
         """
-        엑셀 데이터를 이용해서 파일 이름이랑 유튜브 링크 여부를 추가함
+        엑셀 데이터를 이용해서 파일 이름이랑 유튜브 링크 여부를 추가하는 메서드
         """
         if not self.excel_data:
             raise CustomException("엑셀 데이터가 존재하지 않습니다.")
@@ -51,12 +58,19 @@ class Playlist:
 
             downloadable_link = data[ExcelDataCfg.DownloadableLink.keyname]
             is_youtube_link = AdditionalData.is_youtube_link(downloadable_link)
+
             self.additional_data[idx][
                 AdditionalDataCfg.IsYoutubeLink.keyname
             ] = is_youtube_link
 
-    def check_downloadable_link(self):
-        non_youtube_link_contained = False
+    def check_downloadable_link(self) -> bool:
+        """
+        다운가능한 링크에 유튜브 링크가 아닌 것이 있는지 검사함
+
+        Returns:
+            bool: 유튜브 링크가 아닌 것이 하나라도 있으면 True, 아니면 False
+        """
+        non_yt_link_contained = False
         for idx, data in enumerate(self.additional_data):
             if not data[AdditionalDataCfg.IsYoutubeLink.keyname]:
                 person_name = self.excel_data[idx][ExcelDataCfg.Name.keyname]
@@ -64,33 +78,225 @@ class Playlist:
                     ExcelDataCfg.DownloadableLink.keyname
                 ]
                 Logger.warning(
-                    f"{person_name}의 다운가능한 링크가 유튜브 링크가 아닙니다."
+                    f"{person_name}님의 다운가능한 링크가 유튜브 링크가 아닙니다."
                 )
                 Logger.warning(downloadable_link)
-                non_youtube_link_contained = True
+                non_yt_link_contained = True
 
-        if non_youtube_link_contained:
-            Logger.debug(
-                "일부 다운가능한 링크가 유튜브 링크가 아닙니다. 다운로드를 계속하려면 yes를, 아니라면 no를 입력하고 엔터를 눌러주세요."
-            )
-            answer = None
-            while answer in ["yes", "no"]:
-                answer = input("다운로드를 계속 하시겠습니까?: ")
-                if answer == "yes":
-                    break
-                elif answer == "no":
-                    raise UserInvokedException()
         Logger.info("곡명과 다운가능한 링크 검사를 완료했습니다.")
 
-    def download_data(self):
-        Logger.info("노래와 썸네일의 다운로드를 시작합니다.")
-        for data in self.excel_data:
+        return non_yt_link_contained
+
+    def init_dl_path(self):
+        """
+        다운로드 받을 폴더를 삭제 후 다시 생성하는 메서드
+        """
+        FileManagment.create_folder(self.program_dir, PathCfg.MusicDir)
+        FileManagment.create_folder(self.program_dir, PathCfg.ThumbnailDir)
+
+    def download_and_update_status(self, retry: bool = False):
+        """
+        노래와 썸네일을 다운로드 받고 다운로드 여부를 추가 데이터에 업데이트함
+
+        Args:
+            retry (bool, optional): 다운로드를 다시 시도할지 여부
+        """
+        if retry:
+            # 만약에 재시도라면 다운로드 여부를 확인하고 다시 다운로드 받기
+            music_dl_key = AdditionalDataCfg.MusicDownloaded.keyname
+            thumbnail_dl_key = AdditionalDataCfg.ThumbnailDownloaded.keyname
+            for data in self.additional_data:
+                if (
+                    not music_dl_key in data.keys()
+                    or not thumbnail_dl_key in data.keys()
+                ):
+                    raise CustomException(
+                        "아직 노래나 썸네일이 다운로드 된 상태가 아닙니다."
+                    )
+            Logger.info("다시 다운로드를 시도합니다.")
+        else:
+            Logger.info(
+                "노래와 썸네일의 다운로드를 시작합니다. 유튜브 영상 다운로드 프로그램의 메세지가 일부 표시될 수 있습니다."
+            )
+
+        for idx, data in enumerate(self.playlist_data):
             downloadable_link = data[ExcelDataCfg.DownloadableLink.keyname]
+            file_name = data[AdditionalDataCfg.FileName.keyname]
+            song_name = data[ExcelDataCfg.SongNameKor.keyname]
+
+            if retry:
+                music_downloaded = data[AdditionalDataCfg.MusicDownloaded.keyname]
+                if music_downloaded:
+                    continue
+
+            # 노래 다운로드
+            music_dl_option = DownloadData.set_dl_options(
+                self.program_dir, file_name, DownloadDataCfg.Music
+            )
+
+            music_dl_status = DownloadData.download_data(
+                self.program_dir,
+                song_name,
+                music_dl_option,
+                downloadable_link,
+                DownloadDataCfg.Music,
+            )
+
+            self.additional_data[idx][
+                AdditionalDataCfg.MusicDownloaded.keyname
+            ] = music_dl_status
+
+        for idx, data in enumerate(self.playlist_data):
+            downloadable_link = data[ExcelDataCfg.DownloadableLink.keyname]
+            file_name = data[AdditionalDataCfg.FileName.keyname]
+            song_name = data[ExcelDataCfg.SongNameKor.keyname]
+
+            if retry:
+                thumbnail_downloaded = data[
+                    AdditionalDataCfg.ThumbnailDownloaded.keyname
+                ]
+                if thumbnail_downloaded:
+                    continue
+
+            # 썸네일 다운로드
+            thumbnail_dl_option = DownloadData.set_dl_options(
+                self.program_dir, file_name, DownloadDataCfg.Thumbnail
+            )
+
+            thumbnail_dl_status = DownloadData.download_data(
+                self.program_dir,
+                song_name,
+                thumbnail_dl_option,
+                downloadable_link,
+                DownloadDataCfg.Thumbnail,
+                file_name,
+            )
+
+            self.additional_data[idx][
+                AdditionalDataCfg.ThumbnailDownloaded.keyname
+            ] = thumbnail_dl_status
+
+    def check_dl_status(self) -> bool:
+        """
+        노래와 썸네일이 전부 다운로드 되었는지 확인함.
+
+        Returns:
+            bool: 전부 다운로드 되었으면 True, 하나라도 다운로드가 안되었으면 False
+        """
+
+        all_data_downloaded = True
+        for idx, add_data in enumerate(self.additional_data):
+            song_name = self.excel_data[idx][ExcelDataCfg.SongNameKor.keyname]
+            if not add_data[AdditionalDataCfg.MusicDownloaded.keyname]:
+                Logger.warning(f'"{song_name}"의 노래가 다운로드 되지 않았습니다.')
+                all_data_downloaded = False
+            if not add_data[AdditionalDataCfg.ThumbnailDownloaded.keyname]:
+                Logger.warning(f'"{song_name}"의 썸네일이 다운로드 되지 않았습니다.')
+                all_data_downloaded = False
+
+        if all_data_downloaded:
+            Logger.info("모든 데이터가 다운로드 되었습니다.")
+
+        return all_data_downloaded
+
+    def create_json_file(self):
+        """
+        플레이리스트에 대한 정보를 담은 json파일을 생성하는 메서드
+        """
+        try:
+            json_data = []
+            for data in self.playlist_data:
+                for value in ExcelDataCfg:
+                    if value.export:
+                        json_data.append(data[value.keyname])
+
+                for value in AdditionalDataCfg:
+                    if value.export:
+                        json_data.append(data[value.keyname])
+
+            FileManagment.save_json_file(
+                self.program_dir, f"{self.file_prefix}.json", json_data
+            )
+        except Exception as e:
+            raise e
+
+    def create_zip_file(self):
+        """
+        다운로드한 노래, 썸네일 파일로 zip파일을 생성하는 메서드
+        """
+        try:
+            Logger.debug("다운로드한 파일들로 압축파일 생성을 시작합니다...")
+            original_path = []
+            save_path = []
+
+            music_folder_rel_path = PathCfg.MusicDir.value
+            thumbnail_folder_rel_path = PathCfg.ThumbnailDir.value
+
+            music_folder_path = os.path.join(self.program_dir, music_folder_rel_path)
+            thumbnail_folder_path = os.path.join(
+                self.program_dir, thumbnail_folder_rel_path
+            )
+
+            # 노래, 썸네일 파일 경로 추가
+            # TODO: 나중에 적절한 함수로 따로 분리하기
+            for data in self.playlist_data:
+                # 노래나 썸네일의 경로가 존재할 때만 배열에 추가
+                file_name = data[AdditionalDataCfg.FileName.keyname]
+
+                music_ext = "mp3"
+                music_file_path = os.path.join(
+                    music_folder_path, f"{file_name}.{music_ext}"
+                )
+
+                if os.path.exists(music_file_path):
+                    original_path.append(music_file_path)
+                    save_path.append(
+                        os.path.join(music_folder_rel_path, f"{file_name}.{music_ext}")
+                    )
+
+                thumbnail_ext = "png"
+                thumbnail_file_path = os.path.join(
+                    thumbnail_folder_path, f"{file_name}.{thumbnail_ext}"
+                )
+
+                if os.path.exists(thumbnail_file_path):
+                    original_path.append(thumbnail_file_path)
+                    save_path.append(
+                        os.path.join(
+                            thumbnail_folder_rel_path, f"{file_name}.{thumbnail_ext}"
+                        )
+                    )
+
+            # json 파일 경로 추가
+            json_file_name = f"{self.file_prefix}.json"
+            json_file_path = os.path.join(self.program_dir, json_file_name)
+
+            if os.path.exists(json_file_path):
+                original_path.append(json_file_path)
+                save_path.append(os.path.join(json_file_name))
+
+            zip_file_name = f"{self.file_prefix}.zip"
+
+            FileManagment.save_zip_file(
+                self.program_dir, zip_file_name, original_path, save_path
+            )
+            Logger.info(f"압축 파일을 생성했습니다.")
+            Logger.info(f"생성된 압축 파일 이름은 {zip_file_name} 입니다.")
+        except Exception as e:
+            raise e
+
+    def delete_files(self):
+        Logger.debug("기존에 생성된 파일과 폴더들을 삭제합니다.")
+        FileManagment.delete_folder(self.program_dir, PathCfg.MusicDir)
+        FileManagment.delete_folder(self.program_dir, PathCfg.ThumbnailDir)
+        json_file_name = f"{self.file_prefix}.json"
+        FileManagment.delete_file(self.program_dir, json_file_name)
+        Logger.info("삭제가 완료되었습니다.")
 
     @property
     def playlist_data(self):
         """
-        엑셀 데이터와 추가 데이터를 합쳐서 플레이리스트 데이터를 반환함
+        엑셀 데이터와 추가 데이터를 합쳐서 플레이리스트 데이터를 반환하는 프로퍼티
         """
         if not self.excel_data or not self.additional_data:
             raise CustomException("엑셀 데이터와 추가 데이터를 먼저 불러와주세요.")
@@ -101,190 +307,15 @@ class Playlist:
 
         return playlist_data
 
+    @property
+    def file_prefix(self):
+        """
+        파일 이름에 사용될 접두사를 반환하는 프로퍼티
+        """
+        if not self.excel_file.date:
+            raise CustomException("엑셀 파일의 날짜 정보가 없습니다.")
 
-if __name__ == "__main__":
-    pass
-
-# def delete_original_path(date):
-#     music_folder = config.FOLDER_NAME["music"]
-#     thumbnail_folder = config.FOLDER_NAME["thumbnail"]
-#     json_file = json_data.get_json_file_name(date)
-#     if os.path.exists(music_folder):
-#         shutil.rmtree(music_folder)
-#     if os.path.exists(thumbnail_folder):
-#         shutil.rmtree(thumbnail_folder)
-#     if os.path.exists(json_file):
-#         os.remove(json_file)
-
-
-# def zip_files(info_list, data_type, dl_status, zipf):
-#     if data_type == DlDataType.MUSIC:
-#         folder_name = config.FOLDER_NAME["music"]
-#         ext = "mp3"
-#     elif data_type == DlDataType.THUMBNAIL:
-#         folder_name = config.FOLDER_NAME["thumbnail"]
-#         ext = "png"
-
-#     for info, status in zip(info_list, dl_status):
-#         if not status:
-#             continue
-#         file_name = info[config.ADDITIONAL_KEY["파일 이름"]]
-#         zipf.write(f"{folder_name}/{file_name}.{ext}")
-
-
-# def add_dl_status(info, data_type, dl_status):
-#     if data_type == DlDataType.MUSIC:
-#         key_name = config.ADDITIONAL_KEY["노래 다운 여부"]
-#     elif data_type == DlDataType.THUMBNAIL:
-#         key_name = config.ADDITIONAL_KEY["썸네일 다운 여부"]
-
-#     for idx, info_dict in enumerate(info):
-#         info_dict[key_name] = dl_status[idx]
-
-
-# def get_dl_status(info, data_type, is_json_exist):
-#     if is_json_exist:
-#         # 노래나 썸네일을 다운로드 받지 못한 경우 다시 다운로드 받기
-#         is_dl_success = json_data.check_dl_status(info, data_type)
-#         if not is_dl_success:
-#             dl_status = download_data(info, data_type, retry_dl=True)
-#             return dl_status
-#         else:
-#             return [True] * len(info)
-#     else:
-#         dl_status = download_data(info, data_type)
-#         return dl_status
-
-
-# def extract_final_info(info_list):
-#     final_info_names = config.FINAL_OUTPUT_KEY
-
-#     final_info_list = []
-#     for info in info_list:
-#         final_info = {}
-#         for name in final_info_names:
-#             if name not in config.EXCEL_KEY.keys():
-#                 key_name = config.ADDITIONAL_KEY[name]
-#             else:
-#                 key_name = config.EXCEL_KEY[name]
-
-#             # if key_name == config.EXCEL_KEY["원본 링크"]:
-#             #     # 원본 링크가 비어있는 경우면 그냥 None으로 처리
-#             #     is_valid_link = info[key_name].startswith("http")
-#             #     final_info[key_name] = info[key_name] if is_valid_link else None
-#             # else:
-#             #     final_info[key_name] = info[key_name]
-#             final_info[key_name] = info[key_name]
-
-#         final_info_list.append(final_info)
-
-#     return final_info_list
-
-
-# def generate(program_dir: str, excel_file_name: str):
-#     try:
-#         date_sheet, recommend_sheet = excel_data.get_sheets(excel_file_name)
-#         log_print(LogType.PROGRESS, f"파일 {excel_file_name}에서 데이터를 추출합니다.")
-
-#         date = excel_data.get_date(date_sheet)
-#         # 날짜가 포함된 json 파일이 있는지 체크하기
-#         is_json_exist = json_data.check_json_file_exist(date)
-#         if is_json_exist:
-#             info = json_data.read_json_data(date)
-#         else:
-#             info = excel_data.get_info(recommend_sheet)
-
-#         music_dl_status = get_dl_status(info, DlDataType.MUSIC, is_json_exist)
-#         thumbnail_dl_status = get_dl_status(info, DlDataType.THUMBNAIL, is_json_exist)
-
-#         dl_success = not False in music_dl_status and not False in thumbnail_dl_status
-
-#         while not dl_success:
-#             # json 파일에 데이터 쓰기만 하기
-#             if False in music_dl_status:
-#                 add_dl_status(info, DlDataType.MUSIC, music_dl_status)
-#             if False in thumbnail_dl_status:
-#                 add_dl_status(info, DlDataType.THUMBNAIL, thumbnail_dl_status)
-#             json_data.write_json_data(date, info)
-#             log_print(
-#                 LogType.WARNING,
-#                 "일부 데이터를 다운로드 받지 못했습니다.",
-#             )
-
-#             user_answer = None
-#             while user_answer not in ["yes", "no"]:
-#                 user_answer = input(
-#                     "다시 한 번 다운로드를 시도하려면 yes를, 현재 파일들만으로 압축파일을 만들려면 no을 입력하고 Enter를 눌러주세요: "
-#                 )
-
-#             if user_answer == "yes":
-#                 # 다운로드가 안된 노래와 썸네일만 다시 다운로드 하기
-#                 for idx, status in enumerate(music_dl_status):
-#                     if not status:
-#                         music_retry_status = download_data(
-#                             [info[idx]], DlDataType.MUSIC, retry_dl=True
-#                         )
-#                         if music_retry_status[0]:
-#                             music_dl_status[idx] = True
-
-#                 for idx, status in enumerate(thumbnail_dl_status):
-#                     if not status:
-#                         thumbnail_retry_status = download_data(
-#                             [info[idx]], DlDataType.THUMBNAIL, retry_dl=True
-#                         )
-#                         if thumbnail_retry_status[0]:
-#                             thumbnail_dl_status[idx] = True
-
-#                 dl_success = (
-#                     not False in music_dl_status and not False in thumbnail_dl_status
-#                 )
-#             if user_answer == "no":
-#                 break
-
-#         dl_success = not False in music_dl_status and not False in thumbnail_dl_status
-
-#         # json 파일에 데이터 쓰고 압축하기
-#         if dl_success:
-#             log_print(LogType.SUCCESS, "모든 데이터를 다운로드 받았습니다.")
-
-#         log_print(LogType.PROGRESS, "다운로드한 데이터로 압축파일을 생성합니다.")
-#         final_info_list = extract_final_info(info)
-#         json_data.write_json_data(date, final_info_list)
-
-#         zipf = zipfile.ZipFile(
-#             f"{program_dir}\\{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip",
-#             "w",
-#             zipfile.ZIP_DEFLATED,
-#         )
-#         zip_files(info, DlDataType.MUSIC, music_dl_status, zipf)
-#         zip_files(info, DlDataType.THUMBNAIL, thumbnail_dl_status, zipf)
-#         zipf.write(json_data.get_json_file_name(date))
-#         zipf.close()
-#         log_print(
-#             LogType.SUCCESS,
-#             f"{date.year}년 {date.month}월 플레이리스트 압축파일을 생성했습니다.",
-#         )
-#         delete_original_path(date)
-#         log_print(
-#             LogType.SUCCESS,
-#             f"생성된 압축파일 이름은 {date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip 입니다.",
-#         )
-#         input("Enter키를 누르면 프로그램이 종료 됩니다...")
-
-#     except Exception as e:
-#         if isinstance(e, UserInvokedError):
-#             log_print(LogType.PROGRESS, e)
-#         else:
-#             log_print(LogType.ERROR, e)
-#             log_print(LogType.ERROR, "에러가 발생하였습니다. 프로그램이 종료됩니다.")
-#         if date:
-#             # 다운로드, 생성된 파일들이 있으면 삭제
-#             delete_original_path(date)
-#             # 압축파일이 생성되었으면 삭제
-#             zip_file_path = f"{program_dir}\\{date.year}-{str(date.month).zfill(2)}-{config.ZIP_FILE_SUFFIX}.zip"
-#             if os.path.exists(zip_file_path):
-#                 os.remove(zip_file_path)
-#         input("Enter키를 누르면 프로그램이 종료 됩니다...")
+        return FileManagment.get_file_prefix(self.excel_file.date, self.created_time)
 
 
 if __name__ == "__main__":
