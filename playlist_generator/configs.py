@@ -102,7 +102,7 @@ class ExcelDataCfg(DataEnum):
     """
     SongName = {
         "keyname": "songName",
-        "export": True,
+        "export": False,
         "essential": True,
         "ui_name": "노래 제목",
     }
