@@ -9,11 +9,22 @@ LoggerColor = {
     logging.CRITICAL: Fore.MAGENTA,  # CRITICAL: 자홍색
 }
 
+LoggerMsg = {
+    logging.DEBUG: "작업",
+    logging.INFO: "정보",
+    logging.WARNING: "경고",
+    logging.ERROR: "오류",
+    logging.CRITICAL: "심각한 오류",
+}
+
 
 class ColoredFormatter(logging.Formatter):
     def format(self, record: logging):
         level_color = LoggerColor.get(record.levelno, Fore.WHITE)
-        record.msg = f"{level_color}{record.levelname} - {Fore.WHITE}{record.msg}{Style.RESET_ALL}"
+        level_msg = LoggerMsg.get(record.levelno, "알 수 없는 메세지")
+        record.msg = (
+            f"{level_color}{level_msg} - {Fore.WHITE}{record.msg}{Style.RESET_ALL}"
+        )
         return super().format(record)
 
 
@@ -23,7 +34,7 @@ def _init_logger():
 
     console_handler = logging.StreamHandler()
     console_handler.setLevel(logging.DEBUG)
-    formatter = ColoredFormatter('%(asctime)s - %(message)s', datefmt='%H:%M:%S')
+    formatter = ColoredFormatter("%(asctime)s - %(message)s", datefmt="%H:%M:%S")
     console_handler.setFormatter(formatter)
 
     logger.addHandler(console_handler)
