@@ -1,8 +1,9 @@
 import PyInstaller.__main__
 import zipfile
+import sys
 import os
 
-current_dir = os.chdir()
+current_dir = os.path.dirname(sys.argv[0])
 zip_file_name = "Playlist-Downloader.zip"
 zip_file_path = os.path.join(current_dir, zip_file_name)
 
