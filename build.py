@@ -2,17 +2,30 @@ import PyInstaller.__main__
 import zipfile
 import os
 
-if os.path.exists("Playlist-Downloader.zip"):
-    os.remove("Playlist-Downloader.zip")
+current_dir = os.chdir()
+zip_file_name = "Playlist-Downloader.zip"
+zip_file_path = os.path.join(current_dir, zip_file_name)
+
+if os.path.exists(zip_file_path):
+    os.remove(zip_file_path)
 
 PyInstaller.__main__.run(["main.py", "--onefile", "--icon", "icon.ico"])
 
 zipf = zipfile.ZipFile(
-    "Playlist-Downloader.zip",
+    zip_file_path,
     "w",
     zipfile.ZIP_DEFLATED,
 )
-zipf.write("dist/main.exe", "플레이리스트 다운로더.exe")
-zipf.write("assets/ffmpeg.exe", "assets/ffmpeg.exe")
-zipf.write("assets/ffprobe.exe", "assets/ffprobe.exe")
+zipf.write(
+    os.path.join(current_dir, "dist", "main.exe"),
+    os.path.join("플레이리스트 다운로더.exe"),
+)
+zipf.write(
+    os.path.join(current_dir, "assets", "ffmpeg.exe"),
+    os.path.join("assets", "ffmpeg.exe"),
+)
+zipf.write(
+    os.path.join(current_dir, "assets", "ffprobe.exe"),
+    os.path.join("assets", "ffprobe.exe"),
+)
 zipf.close()
