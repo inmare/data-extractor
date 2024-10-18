@@ -1,6 +1,4 @@
-import os
 import datetime
-from typing import List
 import openpyxl as xl
 import openpyxl.worksheet.worksheet as worksheet
 from .configs import ExcelSheetCfg

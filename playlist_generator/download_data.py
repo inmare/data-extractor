@@ -1,22 +1,8 @@
-# from . import project_config as config
-# from .project_config import DlDataType
-# from .logger import log_print, LogType
-# from PIL import Image
-# import yt_dlp
-# import os
-
-
 import os
 import yt_dlp
 from PIL import Image
 from .logger import Logger
-from .configs import (
-    PathCfg,
-    ExcelDataCfg,
-    AdditionalDataCfg,
-    DownloadCfg,
-    DownloadDataCfg,
-)
+from .configs import PathCfg, DownloadCfg, DownloadDataCfg
 
 
 def set_ffmpeg_path(program_dir: str) -> None:

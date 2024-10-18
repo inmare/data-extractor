@@ -1,23 +1,8 @@
-# class CellValueError(Exception):
-#     def __init__(self, person, prop):
-#         self.msg = f"{person}님의 {prop}에 해당하는 정보가 없는 것 같습니다. 엑셀 파일을 확인해주세요."
-
-#     def __str__(self):
-#         return self.msg
-
-
-# class UserInvokedError(Exception):
-#     def __init__(self, msg):
-#         self.msg = msg
-
-#     def __str__(self):
-#         return self.msg
-
-
 class UserInvokedException(Exception):
     """
     유저가 스스로 프로그램을 종료했을 때 발생하는 에러메세지
     """
+
     def __init__(self) -> None:
         self.msg = "사용자가 프로그램을 종료했습니다."
 

@@ -2,11 +2,11 @@ import logging
 from colorama import Fore, Style
 
 LoggerColor = {
-    logging.DEBUG: Fore.BLUE,  # DEBUG: 초록색
-    logging.INFO: Fore.GREEN,  # INFO: 파란색
-    logging.WARNING: Fore.YELLOW,  # WARNING: 노란색
-    logging.ERROR: Fore.RED,  # ERROR: 빨간색
-    logging.CRITICAL: Fore.MAGENTA,  # CRITICAL: 자홍색
+    logging.DEBUG: Fore.BLUE,
+    logging.INFO: Fore.GREEN,
+    logging.WARNING: Fore.YELLOW,
+    logging.ERROR: Fore.RED,
+    logging.CRITICAL: Fore.MAGENTA,
 }
 
 LoggerMsg = {
