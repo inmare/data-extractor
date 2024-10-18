@@ -102,21 +102,12 @@ class ExcelDataCfg(DataEnum):
     """
     SongName = {
         "keyname": "songName",
-        "export": False,
-        "essential": True,
-        "ui_name": "노래 제목",
-    }
-    """
-    노래의 원 제목
-    """
-    SongName = {
-        "keyname": "songName",
         "export": True,
         "essential": True,
         "ui_name": "노래 제목",
     }
     """
-    노래의 번역된 제목
+    노래의 원 제목
     """
     SongNameKor = {
         "keyname": "songNameKor",
